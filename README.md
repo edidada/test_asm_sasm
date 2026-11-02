@@ -1,20 +1,21 @@
 # test_asm_sasm
 
-A tiny 64-bit NASM program built with the assembler/linker toolchain that ships
-with SASM (C:\Program Files (x86)\SASM):
+一个用 SASM 自带工具链（位于 C:\Program Files (x86)\SASM）构建的小型 64 位 NASM 程序：
 
-  - NASM\nasm.exe        - assembles to Win64 COFF
-  - MinGW64\bin\gcc.exe - links against the C runtime (x86_64-w64-mingw32)
+  - NASM\nasm.exe        - 汇编为 Win64 COFF 目标文件
+  - MinGW64\bin\gcc.exe - 链接 C 运行时（x86_64-w64-mingw32）
 
-Build and run (local, PowerShell):
+本地构建并运行（PowerShell）：
 
     .\build.ps1
 
-It assembles src/main.asm, links it into build/main.exe, and runs it.
-The program prints a banner, computes the sum 1..100 (5050), and exits 0.
+它会汇编 src/main.asm，链接生成 build/main.exe 并运行。
+程序会打印一行标题、计算 1 到 100 的累加和（结果应为 5050），最后以退出码 0 结束。
 
-CI:
+CI（持续集成）：
 
-.github/workflows/build.yml reproduces the exact same build on GitHub Actions
-using the equivalent MSYS2 MinGW64 nasm + gcc, then runs the executable.
-Check the run with:  gh run watch
+.github/workflows/build.yml 在 GitHub Actions 上使用等价的 MSYS2 MINGW64
+nasm + gcc 复现完全相同的构建，然后运行生成的可执行文件。
+查看运行日志可用：
+
+    gh run watch
