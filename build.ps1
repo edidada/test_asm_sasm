@@ -1,28 +1,48 @@
-# Builds the project with the SASM-shipped NASM + MinGW-w64 gcc.
-# Falls back to tools found on PATH (used by CI runners).
+# Builds the project.
+# Default toolchain is the SASM-shipped NASM + MinGW64 (MSVCRT) gcc.
+# Use -Toolchain UCRT64 to build with a local MSYS2 UCRT64 toolchain
+# (matches the CI environment). It falls back to tools on PATH.
+[CmdletBinding()]
+param(
+    [ValidateSet('SASM', 'UCRT64')]
+    [string]$Toolchain = 'SASM'
+)
+
 $ErrorActionPreference = 'Stop'
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$src       = Join-Path $ScriptDir 'src\main.asm'
-$buildDir  = Join-Path $ScriptDir 'build'
-$obj       = Join-Path $buildDir 'main.obj'
-$exe       = Join-Path $buildDir 'main.exe'
+$src      = Join-Path $ScriptDir 'src\main.asm'
+$buildDir = Join-Path $ScriptDir 'build'
+$obj      = Join-Path $buildDir 'main.obj'
+$exe      = Join-Path $buildDir 'main.exe'
 
-# Prefer the SASM-shipped toolchain; fall back to PATH.
-$SasmNasm = 'C:\Program Files (x86)\SASM\NASM\nasm.exe'
-$SasmGcc  = 'C:\Program Files (x86)\SASM\MinGW64\bin\gcc.exe'
-
-function Find-Tool {
-    param($name, $sasmPath)
-    if ($sasmPath -and (Test-Path $sasmPath)) { return $sasmPath }
-    $cmd = Get-Command $name -ErrorAction SilentlyContinue
-    if ($cmd) { return $cmd.Path }
-    throw "Cannot locate tool: $name"
+switch ($Toolchain) {
+    'SASM' {
+        $nasmCandidates = @('C:\Program Files (x86)\SASM\NASM\nasm.exe')
+        $gccCandidates  = @('C:\Program Files (x86)\SASM\MinGW64\bin\gcc.exe')
+        $label = 'SASM (MinGW64 / MSVCRT)'
+    }
+    'UCRT64' {
+        $nasmCandidates = @('C:\msys64\ucrt64\bin\nasm.exe')
+        $gccCandidates  = @('C:\msys64\ucrt64\bin\gcc.exe')
+        $label = 'MSYS2 UCRT64'
+    }
 }
 
-$nasm = Find-Tool 'nasm' $SasmNasm
-$gcc  = Find-Tool 'gcc'  $SasmGcc
+function Resolve-Tool {
+    param($name, $candidates)
+    foreach ($c in $candidates) {
+        if ($c -and (Test-Path $c)) { return $c }
+    }
+    $cmd = Get-Command $name -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Path }
+    throw "Cannot locate tool: $name (searched: $($candidates -join ', '))"
+}
 
+$nasm = Resolve-Tool 'nasm' $nasmCandidates
+$gcc  = Resolve-Tool 'gcc'  $gccCandidates
+
+Write-Host "Toolchain: $label"
 Write-Host "Using nasm: $nasm"
 Write-Host "Using gcc : $gcc"
 
