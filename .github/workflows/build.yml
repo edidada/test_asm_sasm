@@ -1,0 +1,28 @@
+name: build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (MinGW64 nasm + gcc)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-nasm
+
+      - name: Build and run
+        shell: msys2 {0}
+        run: |
+          mkdir -p build
+          nasm -f win64 src/main.asm -o build/main.obj
+          gcc build/main.obj -o build/main.exe
+          ./build/main.exe
